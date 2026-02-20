@@ -1,0 +1,79 @@
+CREATE TABLE patients (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    gender VARCHAR(10),
+    email VARCHAR(150) UNIQUE NOT NULL,
+    phone_number VARCHAR(15),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE sleep_sessions (
+    id SERIAL PRIMARY KEY,
+    patient_id INT NOT NULL,
+    session_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id) REFERENCES patients(id) ON DELETE CASCADE
+);
+
+CREATE TABLE sleep_metrics (
+    id SERIAL PRIMARY KEY,
+    session_id INT NOT NULL,
+    heart_rate FLOAT,
+    hrv FLOAT,
+    spo2 FLOAT,
+    sleep_stage VARCHAR(50),
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (session_id) REFERENCES sleep_sessions(id) ON DELETE CASCADE
+);
+
+INSERT INTO patients (name, gender, email, phone_number)
+VALUES ('Marry', 'Female', 'marry@email.com', '9876543210');
+
+INSERT INTO sleep_sessions (patient_id)
+VALUES (
+    (SELECT id FROM patients WHERE email = 'marry@email.com')
+);
+
+INSERT INTO sleep_metrics (session_id, heart_rate, hrv, spo2, sleep_stage)
+VALUES (
+    (SELECT id FROM sleep_sessions 
+     WHERE patient_id = (SELECT id FROM patients WHERE email='marry@email.com')
+     ORDER BY id DESC LIMIT 1),
+    78,
+    45,
+    92,
+    'REM'
+);
+
+SELECT * FROM patients;
+
+SELECT * FROM sleep_sessions;
+
+SELECT * FROM sleep_metrics;
+
+SELECT 
+    p.name,
+    p.email,
+    s.session_date,
+    m.heart_rate,
+    m.hrv,
+    m.spo2,
+    m.sleep_stage
+FROM patients p
+JOIN sleep_sessions s ON p.id = s.patient_id
+JOIN sleep_metrics m ON s.id = m.session_id;
+
+SELECT * FROM patients;
+
+
+3 different tables are created
+
+
+root link:
+http://127.0.0.1:8000
+
+Post link:
+http://127.0.0.1:8000/docs
+
+get link:
+http://127.0.0.1:8000/all_sleep_data
+

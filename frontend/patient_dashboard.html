@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Patient Dashboard - SomnoCare</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #eef2f7;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .navbar {
+            background: #2c5364;
+        }
+
+        .navbar-brand {
+            color: white !important;
+            font-weight: bold;
+        }
+
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .card {
+            border-radius: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+        <span class="navbar-brand">SomnoCare - Patient Panel</span>
+        <button class="btn logout-btn" onclick="logout()">Logout</button>
+    </div>
+</nav>
+
+<div class="container mt-4">
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h4 id="welcomeText"></h4>
+            <p class="text-muted">Your Sleep Apnea Reports</p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            Sleep Reports
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Heart Rate</th>
+                        <th>HRV</th>
+                        <th>SpO2</th>
+                        <th>Sleep Stage</th>
+                        <th>AI Severity</th>
+                        <th>Doctor Confirmed</th>
+                        <th>Doctor Notes</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsTable">
+                    <tr>
+                        <td colspan="8" class="text-center">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+
+const user = JSON.parse(localStorage.getItem("user"));
+
+if (!user || user.role !== "patient") {
+    window.location.href = "index.html";
+} else {
+    document.getElementById("welcomeText").innerText =
+        "Welcome " + user.name;
+    loadResults();
+}
+
+function logout() {
+    localStorage.removeItem("user");
+    window.location.href = "index.html";
+}
+
+async function loadResults() {
+
+    const response = await fetch(
+        `http://127.0.0.1:8000/patient/results/${user.user_id}`
+    );
+
+    const results = await response.json();
+
+    const table = document.getElementById("resultsTable");
+    table.innerHTML = "";
+
+    if (results.length === 0) {
+        table.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center">
+                    No sleep reports available
+                </td>
+            </tr>`;
+        return;
+    }
+
+    results.forEach(report => {
+
+        let severityColor = "secondary";
+
+        if (report.ai_severity === "Severe") severityColor = "danger";
+        else if (report.ai_severity === "Moderate") severityColor = "warning";
+        else if (report.ai_severity === "Mild") severityColor = "info";
+
+        table.innerHTML += `
+            <tr>
+                <td>${report.session_date}</td>
+                <td>${report.heart_rate}</td>
+                <td>${report.hrv}</td>
+                <td>${report.spo2}</td>
+                <td>${report.sleep_stage}</td>
+                <td><span class="badge bg-${severityColor}">
+                    ${report.ai_severity}
+                </span></td>
+                <td>${report.confirmed_severity || '-'}</td>
+                <td>${report.doctor_notes || '-'}</td>
+            </tr>
+        `;
+    });
+}
+
+</script>
+
+</body>
+</html>
