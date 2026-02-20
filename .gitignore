@@ -6,7 +6,7 @@ __pycache__/
 venv/
 .env
 
-# AI Model (large file)
+# AI Model
 model.h5
 
 # Uploaded files
