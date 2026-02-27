@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Patient Analysis</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+body { background:#f4f7fa; }
+.navbar { background:#2c5364; }
+.navbar-brand { color:white !important; font-weight:bold; }
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg">
+<div class="container-fluid">
+<span class="navbar-brand">Patient Analysis</span>
+<button class="btn btn-light" onclick="goBack()">Back</button>
+</div>
+</nav>
+
+<div class="container mt-4">
+
+<div class="card shadow p-4 mb-4">
+<h4 id="patientName"></h4>
+
+<h5 class="mt-3">Upload Sleep Files (.dat, .hea, .apn)</h5>
+
+<input type="file" id="files" multiple class="form-control mb-3">
+
+<button class="btn btn-primary" onclick="analyze()">Analyze</button>
+
+<div id="loading" class="text-primary mt-2"></div>
+
+</div>
+
+<div class="card shadow p-4 mb-4" id="aiResultCard" style="display:none;">
+<h5>AI Result</h5>
+
+<p><b>Heart Rate:</b> <span id="hr"></span></p>
+<p><b>HRV:</b> <span id="hrv"></span></p>
+<p><b>SpO2:</b> <span id="spo2"></span></p>
+<p><b>Sleep Stage:</b> <span id="stage"></span></p>
+<p><b>AHI:</b> <span id="ahi"></span></p>
+<p><b>Total Events:</b> <span id="events"></span></p>
+<p><b>AI Severity:</b> <span id="aiSeverity"></span></p>
+
+<h5 class="mt-3">Doctor Review</h5>
+
+<select id="confirmedSeverity" class="form-select mb-2">
+<option value="">Select Severity</option>
+<option>Mild</option>
+<option>Moderate</option>
+<option>Severe</option>
+</select>
+
+<textarea id="doctorNotes" class="form-control mb-2" placeholder="Enter notes"></textarea>
+
+<button class="btn btn-success" onclick="saveReport()">Save Review</button>
+
+</div>
+
+<div class="card shadow p-4">
+<h5>Previous Reports</h5>
+<table class="table table-bordered text-center">
+<thead>
+<tr>
+<th>Date</th>
+<th>AI Severity</th>
+<th>Doctor Severity</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody id="previousReports">
+<tr><td colspan="4">Loading...</td></tr>
+</tbody>
+</table>
+</div>
+
+</div>
+
+<script>
+
+const selected = JSON.parse(localStorage.getItem("selectedPatient"));
+
+if(!selected){
+    window.location.href="doctor_dashboard.html";
+}
+
+document.getElementById("patientName").innerText = selected.name;
+
+let currentSessionId = null;
+
+function goBack(){
+    window.location.href="doctor_dashboard.html";
+}
+
+async function analyze(){
+
+    const filesInput = document.getElementById("files");
+
+    if(filesInput.files.length !== 3){
+        alert("Upload exactly 3 files (.dat, .hea, .apn)");
+        return;
+    }
+
+    document.getElementById("loading").innerText="Analyzing... Please wait.";
+
+    const formData = new FormData();
+    for(let i=0;i<filesInput.files.length;i++){
+        formData.append("files", filesInput.files[i]);
+    }
+
+    try {
+
+        const response = await fetch(`/doctor/upload-and-save?user_id=${selected.userId}`,{
+            method:"POST",
+            body:formData
+        });
+
+        const result = await response.json();
+
+        console.log("AI RESPONSE:", result);  // DEBUG
+
+        document.getElementById("loading").innerText="";
+
+        if(response.ok){
+
+            // Fill values
+            document.getElementById("hr").textContent = result.heart_rate;
+            document.getElementById("hrv").textContent = result.hrv;
+            document.getElementById("spo2").textContent = result.spo2;
+            document.getElementById("stage").textContent = result.sleep_stage;
+            document.getElementById("ahi").textContent = result.ahi;
+            document.getElementById("events").textContent = result.total_events;
+            document.getElementById("aiSeverity").textContent = result.severity;
+
+            currentSessionId = result.session_id;
+
+            // FORCE SHOW
+            const card = document.getElementById("aiResultCard");
+            card.style.display = "block";
+
+        } else {
+            alert(result.detail || "Error during analysis");
+        }
+
+    } catch(error){
+        console.error(error);
+        document.getElementById("loading").innerText="";
+        alert("Server error");
+    }
+}
+
+async function loadPreviousReports(){
+
+    const response = await fetch(`/patient/reports/${selected.userId}`);
+    const data = await response.json();
+
+    const table = document.getElementById("previousReports");
+    table.innerHTML="";
+
+    if(data.length===0){
+        table.innerHTML="<tr><td colspan='4'>No reports</td></tr>";
+        return;
+    }
+
+    data.forEach(r=>{
+        table.innerHTML += `
+        <tr>
+        <td>${new Date(r.session_date).toLocaleString()}</td>
+        <td>${r.ai_severity ?? "-"}</td>
+        <td>${r.confirmed_severity ?? "-"}</td>
+        <td>${r.doctor_notes ?? "-"}</td>
+        </tr>
+        `;
+    });
+
+}
+
+async function saveReport(){
+
+    if(!currentSessionId){
+        alert("Please analyze first.");
+        return;
+    }
+
+    const severity = document.getElementById("confirmedSeverity").value;
+    const notes = document.getElementById("doctorNotes").value;
+
+    if(!severity){
+        alert("Select severity first.");
+        return;
+    }
+
+    const response = await fetch("/doctor/review",{
+        method:"PUT",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+            session_id: currentSessionId,
+            confirmed_severity: severity,
+            doctor_notes: notes
+        })
+    });
+
+    if(response.ok){
+        alert("Review saved successfully");
+        loadPreviousReports();
+    } else {
+        alert("Error saving review");
+    }
+}
+
+loadPreviousReports();
+
+</script>
+
+</body>
+</html>

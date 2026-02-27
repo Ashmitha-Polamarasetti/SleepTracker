@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Patient Signup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+body {
+    background: #f4f7fa;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.card {
+    width: 400px;
+    border-radius: 20px;
+}
+</style>
+</head>
+<body>
+
+<div class="card shadow p-4">
+<h3 class="text-center mb-3">Patient Signup</h3>
+
+<form id="signupForm">
+<div class="mb-3">
+<label>Name</label>
+<input type="text" class="form-control" id="name" required>
+</div>
+
+<div class="mb-3">
+<label>Email</label>
+<input type="email" class="form-control" id="email" required>
+</div>
+
+<div class="mb-3">
+<label>Password</label>
+<input type="password" class="form-control" id="password" required>
+</div>
+
+<button type="submit" class="btn btn-primary w-100">Register</button>
+<div id="msg" class="text-danger text-center mt-2"></div>
+</form>
+
+<div class="text-center mt-3">
+<a href="patient_login.html">Already have account?</a>
+</div>
+</div>
+
+<script>
+document.getElementById("signupForm").addEventListener("submit", async function(e){
+e.preventDefault();
+
+const name = document.getElementById("name").value;
+const email = document.getElementById("email").value;
+const password = document.getElementById("password").value;
+
+const response = await fetch("/register", {
+method: "POST",
+headers: {"Content-Type":"application/json"},
+body: JSON.stringify({
+name: name,
+email: email,
+password: password,
+role: "patient"
+})
+});
+
+const data = await response.json();
+
+if(response.ok){
+alert("Registration successful!");
+window.location.href="patient_login.html";
+}else{
+document.getElementById("msg").innerText = data.detail || "Error occurred";
+}
+});
+</script>
+
+</body>
+</html>

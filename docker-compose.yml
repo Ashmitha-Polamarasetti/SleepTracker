@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: sleep_db
+    restart: always
+    environment:
+      POSTGRES_USER: sleep_user
+      POSTGRES_PASSWORD: sleep_pass
+      POSTGRES_DB: sleep_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  ai_service:
+    build: ./ai_service
+    container_name: sleep_ai
+    restart: always
+    ports:
+      - "8001:8001"
+
+  backend:
+    build: ./backend
+    container_name: sleep_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - ai_service
+    environment:
+      DATABASE_URL: postgresql://sleep_user:sleep_pass@postgres:5432/sleep_db
+
+volumes:
+  postgres_data:

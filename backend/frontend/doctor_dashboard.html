@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Doctor Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+body { background:#f4f7fa; }
+.navbar { background:#2c5364; }
+.navbar-brand { color:white !important; font-weight:bold; }
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg">
+<div class="container-fluid">
+<span class="navbar-brand">Doctor Dashboard</span>
+<button class="btn btn-danger" onclick="logout()">Logout</button>
+</div>
+</nav>
+
+<div class="container mt-4">
+
+<div class="card shadow">
+<div class="card-header bg-dark text-white">
+Patients List
+</div>
+<div class="card-body">
+
+<table class="table table-bordered text-center">
+<thead>
+<tr>
+<th>Name</th>
+<th>Gender</th>
+<th>Phone</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="patientTable">
+<tr><td colspan="4">Loading...</td></tr>
+</tbody>
+</table>
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+const user = JSON.parse(localStorage.getItem("user"));
+
+if(!user || user.role !== "doctor"){
+window.location.href="doctor_login.html";
+}
+
+function logout(){
+localStorage.clear();
+window.location.href="doctor_login.html";
+}
+
+async function loadPatients(){
+
+const response = await fetch("/doctor/patients");
+const data = await response.json();
+
+const table = document.getElementById("patientTable");
+table.innerHTML="";
+
+if(data.length === 0){
+table.innerHTML="<tr><td colspan='4'>No patients found</td></tr>";
+return;
+}
+
+data.forEach(p => {
+
+table.innerHTML += `
+<tr>
+<td>${p.name}</td>
+<td>${p.gender ?? "-"}</td>
+<td>${p.phone_number ?? "-"}</td>
+<td>
+<button class="btn btn-primary btn-sm"
+onclick="viewPatient(${p.user_id}, '${p.name}')">
+View
+</button>
+</td>
+</tr>
+`;
+
+});
+
+}
+
+function viewPatient(userId, name){
+localStorage.setItem("selectedPatient", JSON.stringify({userId, name}));
+window.location.href="doctor_patient_view.html";
+}
+
+loadPatients();
+
+</script>
+
+</body>
+</html>
