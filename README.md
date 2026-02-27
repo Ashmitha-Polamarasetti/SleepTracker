@@ -1,43 +1,59 @@
 -> Sleep Apnea Detection System
+-> Full-Stack AI Healthcare Platform | FastAPI + TensorFlow + Docker
 
-A Full-Stack AI-based healthcare monitoring system for automated sleep apnea detection using ECG signals.
+An end-to-end AI-powered system that detects sleep apnea from ECG signals and provides structured medical insights through a secure web dashboard.
 
 ---
 
--> Project Overview
+-> Project Highlights
 
-This system automates sleep apnea detection using a deep learning model trained on the PhysioNet Apnea-ECG dataset. 
-
-Doctors upload PSG files (.dat, .hea, .apn), and the AI service computes clinical metrics such as:
-
-- Heart Rate (HR)
-- Heart Rate Variability (HRV)
-- Apnea-Hypopnea Index (AHI)
-- Severity Classification
-- Sleep Stage
-
-Results are stored in PostgreSQL and displayed through role-based dashboards.
+-  Deep Learning model trained on PhysioNet Apnea-ECG dataset
+-  Computes clinical metrics: HR, HRV, AHI, Severity Index
+-  ~93% model accuracy
+-  Role-based authentication (Doctor / Patient)
+-  Fully containerized using Docker Compose
+-  PostgreSQL-backed persistent storage
+-  REST-based microservices architecture
 
 ---
 
 -> System Architecture
 
-Doctor → Backend (FastAPI) → AI Service (TensorFlow) → PostgreSQL → Dashboard
+Doctor Upload → Backend API → AI Inference Service → PostgreSQL → Dashboard
 
-Services are containerized using Docker Compose:
-
-- sleep_backend
-- sleep_ai
-- sleep_db
+-> Microservices:
+- sleep_backend – FastAPI API & authentication
+- sleep_ai – TensorFlow inference service
+- sleep_db – PostgreSQL database
 
 ---
 
--> AI Model
+-> AI Model Details
 
-- 1D CNN (TensorFlow)
-- Trained on PhysioNet Apnea-ECG dataset
-- ~93% accuracy
-- Computes AHI and severity classification
+- 1D Convolutional Neural Network (CNN)
+- Binary classification (Apnea / Normal)
+- Optimizer: Adam
+- Loss: Binary Crossentropy
+- Accuracy: ~93%
+
+-> Clinical Metrics Computed:
+- Heart Rate (HR)
+- Heart Rate Variability (HRV - SDNN)
+- Apnea-Hypopnea Index (AHI)
+- Severity Classification
+- Total Apnea Events
+- Sleep Stage Estimation
+
+---
+
+-> Severity Classification
+
+| AHI | Condition |
+|------|-----------|
+| < 5 | Normal |
+| 5–15 | Mild |
+| 15–30 | Moderate |
+| > 30 | Severe |
 
 ---
 
@@ -47,3 +63,12 @@ Services are containerized using Docker Compose:
 - patients
 - sleep_sessions
 - sleep_metrics
+
+Designed with normalized relational mapping for efficient report retrieval.
+
+---
+
+-> Deployment
+
+Run locally using Docker:
+docker-compose up --build
